@@ -21,6 +21,10 @@ jobs:
       - name: Install dependencies
         run: npm install # Instala las dependencias en el runner (VM)
 
+      # Nuevo paso: Instalar PM2 globalmente para el usuario del runner
+      - name: Install PM2 globally
+        run: npm install -g pm2
+
       - name: Create/Update .env and service-account-key.json
         run: |
           # Navegar al directorio de la aplicación (donde se desplegará el código)
