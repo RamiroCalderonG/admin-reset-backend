@@ -1,13 +1,13 @@
 require('dotenv').config(); // Carga las variables de entorno desde .env
 const express = require('express');
 const { google } = require('googleapis');
-const cors = require('cors'); // Importa cors
+const cors = require('cors'); 
 
 const app = express();
 const PORT = process.env.PORT || 3000; // Puerto del servidor
 
 // Middlewares
-app.use(express.json()); // Para parsear el cuerpo de las solicitudes JSON
+app.use(express.json()); // Para solicitudes JSON
 app.use(cors()); // Habilita CORS para todas las rutas. En producción, configúralo para orígenes específicos.
 
 // Configuración de la autenticación de la cuenta de servicio
