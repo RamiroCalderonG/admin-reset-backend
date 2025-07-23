@@ -23,9 +23,6 @@ jobs:
       - name: Configure npm global prefix
         run: npm config set prefix '~/.npm-global'
 
-      - name: Install dependencies
-        run: npm install # Instala las dependencias en el runner (VM)
-
       # Nuevo paso: Instalar PM2 globalmente para el usuario del runner
       - name: Install PM2 globally
         run: npm install -g pm2
@@ -33,7 +30,7 @@ jobs:
       # Nuevo paso: Añadir la ruta de PM2 al PATH
       # Ahora npm bin -g apuntará a ~/.npm-global/bin
       - name: Add PM2 to PATH
-        run: echo "$(npm bin -g)" >> $GITHUB_PATH
+        run: echo "$(npm bin -g)" >> $GITHUB_ENV # Cambiado a GITHUB_ENV
 
       - name: Create/Update .env and service-account-key.json
         run: |
@@ -74,6 +71,9 @@ jobs:
 
           # Navegar al directorio de la aplicación para ejecutar PM2
           cd $APP_DIR
+
+          # Instalar dependencias en el directorio de despliegue
+          npm install
 
           # Reiniciar la aplicación con PM2
           # Si 'admin-backend' ya está registrado, lo reinicia. Si no, lo inicia.
