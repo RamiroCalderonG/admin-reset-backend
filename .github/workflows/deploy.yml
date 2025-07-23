@@ -18,6 +18,11 @@ jobs:
         with:
           node-version: '20' # Asegúrate de que coincida con la versión en tu VM
 
+      # Nuevo paso: Configurar npm para instalar paquetes globales en el home del usuario
+      # Esto evita problemas de permisos al instalar PM2
+      - name: Configure npm global prefix
+        run: npm config set prefix '~/.npm-global'
+
       - name: Install dependencies
         run: npm install # Instala las dependencias en el runner (VM)
 
@@ -26,6 +31,88 @@ jobs:
         run: npm install -g pm2
 
       # Nuevo paso: Añadir la ruta de PM2 al PATH
+      # Ahora npm bin -g apuntará a ~/.npm-global/bin
+      - name: Add PM2 to PATH
+        run: echo "$(npm bin -g)" >> $GITHUB_PATH
+
+      - name: Create/Update .env and service-account-key.json
+        run: |
+          # Navegar al directorio de la aplicación (donde se desplegará el código)
+          # Asegúrate de que este path sea el mismo donde quieres que esté tu backend en la VM
+          # El runner se ejecuta como el usuario 'github-runner' (o el que hayas configurado)
+          # Su directorio home es /home/github-runner
+          APP_DIR="/home/github-runner/app/admin-backend" 
+
+          mkdir -p $APP_DIR # Asegurarse de que el directorio exista
+
+          # Crear el archivo .env con las variables sensibles
+          echo "GOOGLE_APPLICATION_CREDENTIALS=./service-account-key.json" > $APP_DIR/.env
+          echo "ADMIN_EMAIL=${{ secrets.ADMIN_EMAIL }}" >> $APP_DIR/.env
+          echo "PORT=3000" >> $APP_DIR/.env
+          echo "DB_HOST=${{ secrets.DB_HOST }}" >> $APP_DIR/.env
+          echo "DB_PORT=${{ secrets.DB_PORT }}" >> $APP_DIR/.env
+          echo "DB_USER=${{ secrets.DB_USER }}" >> $APP_DIR/.env
+          echo "DB_PASSWORD=${{ secrets.DB_PASSWORD }}" >> $APP_DIR/.env
+          echo "DB_NAME=${{ secrets.DB_NAME }}" >> $APP_DIR/.env
+
+          # Crear el archivo service-account-key.json con el contenido del secret
+          echo '${{ secrets.GOOGLE_APPLICATION_CREDENTIALS_JSON }}' > $APP_DIR/service-account-key.json
+
+          # Asegúrate de que los permisos del archivo de clave sean correctos
+          chmod 600 $APP_DIR/service-account-key.json
+
+
+      - name: Copy code to deployment directory and restart app
+        run: |
+          # Navegar al directorio de la aplicación (donde se desplegará el código)
+          APP_DIR="/home/github-runner/app/admin-backend" 
+
+          # Copiar los archivos del repositorio al directorio de despliegue
+          # rsync es más eficiente para copiar solo los cambios
+          # El primer './' se refiere a la raíz del repositorio clonado por el runner
+          rsync -av --exclude 'node_modules' --exclude '.git' --exclude '.github' ./ $APP_DIR/
+
+          # Navegar al directorio de la aplicación para ejecutar PM2
+          cd $APP_DIR
+
+          # Reiniciar la aplicación con PM2
+          # Si 'admin-backend' ya está registrado, lo reinicia. Si no, lo inicia.
+          pm2 restart admin-backend || pm2 start index.js --name "admin-backend"
+          pm2 save # Guarda el estado de PM2 para que se inicie al reiniciar la VM
+name: Deploy Node.js Backend with Self-Hosted Runner
+
+on:
+  push:
+    branches:
+      - main # Este workflow se ejecutará cada vez que haya un push a la rama 'main'
+
+jobs:
+  deploy:
+    runs-on: self-hosted # ¡IMPORTANTE! Usa 'self-hosted' o las etiquetas de tu runner (ej. 'proxmox-backend')
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4 # Clona tu repositorio en el runner
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20' # Asegúrate de que coincida con la versión en tu VM
+
+      # Nuevo paso: Configurar npm para instalar paquetes globales en el home del usuario
+      # Esto evita problemas de permisos al instalar PM2
+      - name: Configure npm global prefix
+        run: npm config set prefix '~/.npm-global'
+
+      - name: Install dependencies
+        run: npm install # Instala las dependencias en el runner (VM)
+
+      # Nuevo paso: Instalar PM2 globalmente para el usuario del runner
+      - name: Install PM2 globally
+        run: npm install -g pm2
+
+      # Nuevo paso: Añadir la ruta de PM2 al PATH
+      # Ahora npm bin -g apuntará a ~/.npm-global/bin
       - name: Add PM2 to PATH
         run: echo "$(npm bin -g)" >> $GITHUB_PATH
 
