@@ -25,9 +25,9 @@ jobs:
         run: |
           # Navegar al directorio de la aplicación (donde se desplegará el código)
           # Asegúrate de que este path sea el mismo donde quieres que esté tu backend en la VM
-          # Por ejemplo: /home/github-runner/app/admin-backend
-          # NOTA: Usamos el usuario del runner como base para el directorio de la aplicación
-          APP_DIR="/home/${{ github.actor }}/app/admin-backend" # github.actor es el usuario que inició el workflow
+          # El runner se ejecuta como el usuario 'github-runner' (o el que hayas configurado)
+          # Su directorio home es /home/github-runner
+          APP_DIR="/home/github-runner/app/admin-backend" 
 
           mkdir -p $APP_DIR # Asegurarse de que el directorio exista
 
@@ -51,7 +51,7 @@ jobs:
       - name: Copy code to deployment directory and restart app
         run: |
           # Navegar al directorio de la aplicación (donde se desplegará el código)
-          APP_DIR="/home/${{ github.actor }}/app/admin-backend" # github.actor es el usuario que inició el workflow
+          APP_DIR="/home/github-runner/app/admin-backend" 
 
           # Copiar los archivos del repositorio al directorio de despliegue
           # rsync es más eficiente para copiar solo los cambios
