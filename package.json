@@ -11,7 +11,9 @@
   "license": "ISC",
   "description": "Backend base para futuros proyectos.",
   "dependencies": {
+    "axios": "^1.7.2",
     "dotenv": "^17.2.0",
     "express": "^4.19.2"
   }
 }
+
